@@ -778,7 +778,6 @@ module gameLogic {
     return true;
   }
 
-
   /** return true if all the players die */
   export function endOfMatch(playerStatus: boolean[]) {
     for (let i = 0; i < playerStatus.length; i++) {
@@ -787,6 +786,104 @@ module gameLogic {
       }
     }
     return true;
+  }
+  
+  function mapShapeToPos(frow: number, fcol:number, board:Board,
+      shape: Shape, frameX:number, frameY:number, turnIndexBeforeMove:number):{board:Board, valid:boolean}
+  {
+    let valid: boolean = true;
+
+    let CTR = Math.floor(SHAPEWIDTH / 2);
+    let row: number = frow - frameX + CTR;
+    let col: number = fcol - frameY + CTR;
+
+    if (!checkValidShapePlacement(row, col, shape)) {
+      valid = false;
+      return {board:[], valid:valid};
+    }
+
+    let boardAction: Board = getBoardAction(row, col, shape);
+
+    //TODO export a function checkLealMove(board, row, col, turnIndexBeforeMove) // add boardAction
+    if (!checkLegalMove(board, row, col, boardAction, turnIndexBeforeMove)) {
+      return {board:[], valid:valid};
+    }
+
+    return {board:boardAction, valid:valid};
+  }
+
+  function getAllCorners(shape:Shape):number[][]{
+    let corners:number[][] = [];
+    
+    let dirx:number[] = [-1, 0, 1, 0];
+    let diry:number[] = [0, -1, 0, 1];
+    for (let i = 0; i < SHAPEWIDTH; i++) {
+      for (let j = 0; j < SHAPEHEIGHT; j++) {
+        let empty:number[] = [0, 0, 0, 0]
+        if (shape.frame[i][j] === '1') {
+          for (let t = 0; t < 4; t++) {
+            let nx: number = dirx[t] + i;
+            let ny: number = diry[t] + j;
+            if (nx < 0 || nx > SHAPEWIDTH-1 || ny < 0 || ny > SHAPEHEIGHT-1 || shape.frame[nx][ny] === '0') {
+              empty[t] = 1;
+            }
+          }
+        }
+        for (let t = 0; t < 4; t++) {
+          if (empty[t] === 1 && empty[(t+1) % 4] === 1) {
+            corners.push([i, j]);
+          }
+        }
+      }
+    }
+
+    return corners;
+  }
+  /**
+   * find a possible next move for this turn user
+   * @param board 
+   * @param shapeStatus 
+   * @param turnIndexBeforeMove 
+   * @return board:Board,valid:boolean, the board in return is an boardAction only contains the shape
+   */
+  export function getNextPossibleShape(board:Board, shapeStatus: boolean[][], turnIndexBeforeMove: number):{board:Board,valid:boolean}
+  {
+    let retBoard: Board = [];
+    let anchors: number[] = getRecomandAnchor(board, turnIndexBeforeMove);
+    let freeShapeIds: number[] = [];
+    let allshape: AllShape = getInitShapes();
+
+    for (let i = 0; i < SHAPENUMBER; i++) {
+      if (shapeStatus[turnIndexBeforeMove][i]) {
+        freeShapeIds.push(i);
+      }
+    }
+
+    let hasMove = false;
+    for (let t = 0; t < anchors.length; t++) {
+      let anchor = anchors[t];
+      let row:number = parseIJ(anchor)[0];
+      let col:number = parseIJ(anchor)[1];
+
+      for (let shapeId = 0; shapeId < freeShapeIds.length; shapeId++) {
+        for (let op = 0; op < OPERATIONS; op++) {
+          let shape:Shape = getShapeByTypeAndOperation(shapeId, op);
+
+          let corners:number[][] = getAllCorners(shape);
+          for (let c = 0; c < corners.length; c++) {
+            let frameX:number = corners[c][0];
+            let frameY:number = corners[c][1];
+            let action = mapShapeToPos(row, col, board, shape, frameX, frameY, turnIndexBeforeMove);
+            if (action.valid) {
+              return action
+            }
+          }
+        }
+      }
+      // TODO add it to invalid anchor, and purning these anchors for latter search
+    }
+
+    return {board:retBoard, valid:hasMove};
   }
 
   /**
