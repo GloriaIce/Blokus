@@ -20,7 +20,7 @@ var gameLogic;
     gameLogic.SHAPEHEIGHT = 5;
     gameLogic.SHAPEWIDTH = 5;
     gameLogic.SHAPENUMBER = 21;
-    gameLogic.GROUPNUMBER = 4; /// 2
+    gameLogic.GROUPNUMBER = 2; /// 4
     // TODO change this
     gameLogic.STARTANCHOR4 = [0, gameLogic.COLS - 1, gameLogic.ROWS * (gameLogic.COLS - 1), gameLogic.ROWS * gameLogic.COLS - 1];
     gameLogic.STARTANCHOR = [0, gameLogic.ROWS * gameLogic.COLS - 1]; // [0, 14 * 14];
@@ -48,6 +48,19 @@ var gameLogic;
         return status;
     }
     gameLogic.getInitShapeStatus = getInitShapeStatus;
+    function getInitPrevAnchor() {
+        var ret = [];
+        for (var p = 0; p < gameLogic.GROUPNUMBER; p++) {
+            ret[p] = [];
+            for (var i = 0; i < gameLogic.ROWS; i++) {
+                for (var j = 0; j < gameLogic.COLS; j++) {
+                    ret[p][i * gameLogic.COLS + j] = true;
+                }
+            }
+        }
+        return ret;
+    }
+    gameLogic.getInitPrevAnchor = getInitPrevAnchor;
     /*
     export function getTurnIdx() {
       return ....
@@ -347,6 +360,7 @@ var gameLogic;
             delta: null,
             shapeStatus: getInitShapeStatus(),
             playerStatus: getInitPlayerStatus(),
+            anchorStatus: getInitPrevAnchor(),
         };
     }
     gameLogic.getInitialState = getInitialState;
@@ -436,17 +450,36 @@ var gameLogic;
      *      ['X', 'O', 'O'],
      *      ['O', 'X', 'X']]
      */
-    function isTie(board) {
+    function isTie(board, playerStatus) {
+        var over = true;
+        var winner = '';
+        for (var i = 0; i < gameLogic.GROUPNUMBER; i++) {
+            if (playerStatus[i] === true) {
+                over = false;
+                continue;
+            }
+        }
+        if (over) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    function getScore(board) {
+        var score = [];
+        for (var i = 0; i < gameLogic.GROUPNUMBER; i++) {
+            score[i] = 0;
+        }
         for (var i = 0; i < gameLogic.ROWS; i++) {
             for (var j = 0; j < gameLogic.COLS; j++) {
-                if (board[i][j] === '') {
-                    // If there is an empty cell then we do not have a tie.
-                    return false;
+                if (board[i][j] !== '') {
+                    var idx = +board[i][j];
+                    score[idx]++;
                 }
             }
         }
-        // No empty cells, so we have a tie!
-        return true;
+        return score;
     }
     /**
      * Return the winner (either 'X' or 'O') or '' if there is no winner.
@@ -456,36 +489,30 @@ var gameLogic;
      *      ['X', 'O', ''],
      *      ['X', '', '']]
      */
-    function getWinner(board) {
-        var boardString = '';
-        for (var i = 0; i < gameLogic.ROWS; i++) {
-            for (var j = 0; j < gameLogic.COLS; j++) {
-                var cell = board[i][j];
-                boardString += cell === '' ? ' ' : cell;
+    function getWinner(board, playerStatus) {
+        var over = true;
+        var winner = '';
+        for (var i = 0; i < gameLogic.GROUPNUMBER; i++) {
+            if (playerStatus[i] === true) {
+                over = false;
+                continue;
             }
         }
-        var win_patterns = [
-            'XXX......',
-            '...XXX...',
-            '......XXX',
-            'X..X..X..',
-            '.X..X..X.',
-            '..X..X..X',
-            'X...X...X',
-            '..X.X.X..'
-        ];
-        for (var _i = 0, win_patterns_1 = win_patterns; _i < win_patterns_1.length; _i++) {
-            var win_pattern = win_patterns_1[_i];
-            var x_regexp = new RegExp(win_pattern);
-            var o_regexp = new RegExp(win_pattern.replace(/X/g, 'O'));
-            if (x_regexp.test(boardString)) {
-                return 'X';
+        if (over) {
+            var scores = getScore(board);
+            var maxval = 0;
+            var maxIdx = -1;
+            for (var i = 0; i < gameLogic.GROUPNUMBER; i++) {
+                if (maxval < scores[i]) {
+                    maxval = scores[i];
+                    maxIdx = -1;
+                }
             }
-            if (o_regexp.test(boardString)) {
-                return 'O';
+            if (maxIdx >= 0) {
+                winner = maxIdx + '';
             }
         }
-        return '';
+        return winner;
     }
     function getRecomandAnchor(board, turnIndexBeforeMove) {
         var boundary = [];
@@ -670,9 +697,11 @@ var gameLogic;
         return ret;
     }
     gameLogic.updateShapeStatus = updateShapeStatus;
-    function updatePlayerStatus(playerStatus, turnIndexBeforeMove, shapeStatus, board) {
+    function updatePlayerStatus(playerStatus, turnIndexBeforeMove, nextstep) {
         var ret = angular.copy(playerStatus);
-        // TODO check the remianing move
+        if (nextstep.valid === false) {
+            ret[turnIndexBeforeMove] = false;
+        }
         return ret;
     }
     gameLogic.updatePlayerStatus = updatePlayerStatus;
@@ -705,6 +734,93 @@ var gameLogic;
         return true;
     }
     gameLogic.endOfMatch = endOfMatch;
+    function mapShapeToPos(frow, fcol, board, shape, frameX, frameY, turnIndexBeforeMove) {
+        var valid = true;
+        var CTR = Math.floor(gameLogic.SHAPEWIDTH / 2);
+        var row = frow - frameX + CTR;
+        var col = fcol - frameY + CTR;
+        if (!checkValidShapePlacement(row, col, shape)) {
+            valid = false;
+            return { board: [], valid: valid };
+        }
+        var boardAction = getBoardAction(row, col, shape);
+        //TODO export a function checkLealMove(board, row, col, turnIndexBeforeMove) // add boardAction
+        if (!checkLegalMove(board, row, col, boardAction, turnIndexBeforeMove)) {
+            return { board: [], valid: valid };
+        }
+        return { board: boardAction, valid: valid };
+    }
+    function getAllCorners(shape) {
+        var corners = [];
+        var dirx = [-1, 0, 1, 0];
+        var diry = [0, -1, 0, 1];
+        for (var i = 0; i < gameLogic.SHAPEWIDTH; i++) {
+            for (var j = 0; j < gameLogic.SHAPEHEIGHT; j++) {
+                var empty = [0, 0, 0, 0];
+                if (shape.frame[i][j] === '1') {
+                    for (var t = 0; t < 4; t++) {
+                        var nx = dirx[t] + i;
+                        var ny = diry[t] + j;
+                        if (nx < 0 || nx > gameLogic.SHAPEWIDTH - 1 || ny < 0 || ny > gameLogic.SHAPEHEIGHT - 1 || shape.frame[nx][ny] === '0') {
+                            empty[t] = 1;
+                        }
+                    }
+                }
+                for (var t = 0; t < 4; t++) {
+                    if (empty[t] === 1 && empty[(t + 1) % 4] === 1) {
+                        corners.push([i, j]);
+                    }
+                }
+            }
+        }
+        return corners;
+    }
+    /**
+     * find a possible next move for this turn user
+     * @param board
+     * @param shapeStatus
+     * @param turnIndexBeforeMove
+     * @return board:Board,valid:boolean, the board in return is an boardAction only contains the shape
+     */
+    function getNextPossibleShape(prevAnchor, board, shapeStatus, turnIndexBeforeMove) {
+        var retBoard = [];
+        var anchors = getRecomandAnchor(board, turnIndexBeforeMove);
+        var freeShapeIds = [];
+        var allshape = getInitShapes();
+        for (var i = 0; i < gameLogic.SHAPENUMBER; i++) {
+            if (shapeStatus[turnIndexBeforeMove][i]) {
+                freeShapeIds.push(i);
+            }
+        }
+        var thisAnchor = angular.copy(prevAnchor);
+        var hasMove = false;
+        for (var t = 0; t < anchors.length; t++) {
+            var anchor = anchors[t];
+            if (thisAnchor[turnIndexBeforeMove][anchor] === false) {
+                continue;
+            }
+            var row = parseIJ(anchor)[0];
+            var col = parseIJ(anchor)[1];
+            for (var shapeId = 0; shapeId < freeShapeIds.length; shapeId++) {
+                for (var op = 0; op < gameLogic.OPERATIONS; op++) {
+                    var shape = getShapeByTypeAndOperation(shapeId, op);
+                    var corners = getAllCorners(shape);
+                    for (var c = 0; c < corners.length; c++) {
+                        var frameX = corners[c][0];
+                        var frameY = corners[c][1];
+                        var action = mapShapeToPos(row, col, board, shape, frameX, frameY, turnIndexBeforeMove);
+                        if (action.valid) {
+                            return { prev: thisAnchor, board: action.board, valid: action.valid };
+                        }
+                    }
+                }
+            }
+            thisAnchor[turnIndexBeforeMove][row * gameLogic.COLS + col] = false;
+            // TODO add it to invalid anchor, and purning these anchors for latter search
+        }
+        return { prev: thisAnchor, board: retBoard, valid: hasMove };
+    }
+    gameLogic.getNextPossibleShape = getNextPossibleShape;
     /**
      * Returns the move that should be performed when player
      * with index turnIndexBeforeMove makes a move in cell row X col with shapeId.
@@ -738,7 +854,7 @@ var gameLogic;
             throw new Error("One can only make a move in an empty position!");
         }
         // TODO change to IsGameOver function IsGameOver(board, boardAction, turnIndexBeforeMove)
-        if (getWinner(board) !== '' || isTie(board)) {
+        if (getWinner(board, playerStatus) !== '' || isTie(board, playerStatus)) {
             throw new Error("Can only make a move if the game is not over!");
         }
         //~
@@ -748,16 +864,18 @@ var gameLogic;
         shapePlacement(boardAfterMove, boardAction, turnIndexBeforeMove);
         var shapeStatusAfterMove = updateShapeStatus(shapeStatus, shapeId, turnIndexBeforeMove);
         //TODO implement the last check
-        var playerStatusAferMove = updatePlayerStatus(playerStatus, turnIndexBeforeMove, shapeStatusAfterMove, boardAfterMove);
-        var winner = getWinner(boardAfterMove);
+        var nextstep = getNextPossibleShape(stateBeforeMove.anchorStatus, boardAfterMove, shapeStatusAfterMove, turnIndexBeforeMove);
+        var anchorStatusAfterMove = nextstep.prev;
+        var playerStatusAfterMove = updatePlayerStatus(playerStatus, turnIndexBeforeMove, nextstep);
+        var winner = getWinner(boardAfterMove, playerStatusAfterMove);
         var endMatchScores;
         var turnIndex;
         // CHANGE here
-        if (winner !== '' || isTie(boardAfterMove)) {
+        if (winner !== '' || isTie(boardAfterMove, playerStatusAfterMove)) {
             // Game over.
             turnIndex = -1;
             // TODO add endScore Function, the score is measured by the blocks unused.
-            endMatchScores = winner === 'X' ? [1, 0] : winner === 'O' ? [0, 1] : [0, 0];
+            endMatchScores = getScore(boardAfterMove);
             //~
         }
         else {
@@ -774,7 +892,8 @@ var gameLogic;
             delta: delta,
             board: boardAfterMove,
             shapeStatus: shapeStatusAfterMove,
-            playerStatus: playerStatusAferMove,
+            playerStatus: playerStatusAfterMove,
+            anchorStatus: anchorStatusAfterMove,
         };
         return { endMatchScores: endMatchScores, turnIndex: turnIndex, state: state };
     }
