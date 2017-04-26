@@ -257,6 +257,9 @@ var gameLogic;
         var ret = "   0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9\n\r  ----------------------------------------\n\r";
         for (var i = 0; i < height; i++) {
             var tmp = angular.copy(frame[i]);
+            if (tmp === null || tmp === undefined) {
+                continue;
+            }
             for (var j = 0; j < tmp.length; j++) {
                 if (tmp[j] == '') {
                     tmp[j] = ' ';
@@ -515,6 +518,9 @@ var gameLogic;
         return winner;
     }
     function getRecomandAnchor(board, turnIndexBeforeMove) {
+        if (noPreviousMove(board, turnIndexBeforeMove)) {
+            return [gameLogic.STARTANCHOR[turnIndexBeforeMove]];
+        }
         var boundary = [];
         var diri = [-1, 0, 1, 0];
         var dirj = [0, 1, 0, -1];
@@ -538,8 +544,8 @@ var gameLogic;
                 }
             }
         }
-        console.log("boundary for ", turnIndexBeforeMove, ":");
-        console.log(aux_printCoordinator(boundary));
+        //console.log("boundary for ", turnIndexBeforeMove, ":");
+        //console.log(aux_printCoordinator(boundary));
         var ret = [];
         for (var k = 0; k < boundary.length; k++) {
             var j = boundary[k] % gameLogic.COLS;
@@ -609,7 +615,7 @@ var gameLogic;
                     if (nj >= 0 && nj < gameLogic.COLS && ni >= 0 && ni < gameLogic.ROWS
                         && boardAction[ni][nj] != '1'
                         && board[ni][nj] == ('' + turnIndexBeforeMove)) {
-                        console.log("points at (", i, ",", j, ") adjacent with:(", ni, ",", nj, ")");
+                        //console.log("points at (", i, ",", j, ") adjacent with:(", ni, ",", nj, ")");
                         return false;
                     }
                 }
@@ -643,22 +649,22 @@ var gameLogic;
         var possibleAnchor = [];
         // 0. if not territory, anchor is init state
         if (noPreviousMove(board, turnIndexBeforeMove)) {
-            console.log("no previous move");
+            //console.log("no previous move");
             possibleAnchor.push(gameLogic.STARTANCHOR[turnIndexBeforeMove]);
         }
         else {
             possibleAnchor = getRecomandAnchor(board, turnIndexBeforeMove);
         }
-        console.log(turnIndexBeforeMove);
-        console.log(possibleAnchor);
+        //console.log(turnIndexBeforeMove);
+        //console.log(possibleAnchor);
         return possibleAnchor;
     }
     gameLogic.getPossibleAnchor = getPossibleAnchor;
     function checkLegalMove(board, row, col, boardAction, turnIndexBeforeMove) {
         // 0. if not territory, anchor is init state
         var possibleAnchor = getPossibleAnchor(board, turnIndexBeforeMove);
-        console.log("possible Anchors for ", turnIndexBeforeMove, " :");
-        console.log(aux_printCoordinator(possibleAnchor));
+        //console.log("possible Anchors for ", turnIndexBeforeMove, " :");
+        //console.log(aux_printCoordinator(possibleAnchor));
         // 1.has at least one anchor
         var foundAnchor = false;
         for (var k = 0; k < possibleAnchor.length; k++) {
@@ -672,7 +678,7 @@ var gameLogic;
         if (!foundAnchor) {
             return false;
         }
-        console.log("Found anchor");
+        //console.log("Found anchor");
         // not conflict with existing teritory and not adjacent to teritory
         if (!checkSquareOverlap(board, boardAction) ||
             !checkSquareAdj(board, boardAction, turnIndexBeforeMove)) {
@@ -706,7 +712,7 @@ var gameLogic;
     }
     gameLogic.updatePlayerStatus = updatePlayerStatus;
     function checkLegalMoveForGame(board, row, col, turnIndexBeforeMove, shapeId, checkStrong) {
-        console.log("[checkLegalMoveForGame]col:", col, " row", row, " SI:", shapeId);
+        //console.log("[checkLegalMoveForGame]col:", col, " row", row, " SI:", shapeId);
         if (shapeId === undefined || shapeId < 0 || shapeId >= gameLogic.SHAPEMAX) {
             return false;
         }
@@ -735,20 +741,18 @@ var gameLogic;
     }
     gameLogic.endOfMatch = endOfMatch;
     function mapShapeToPos(frow, fcol, board, shape, frameX, frameY, turnIndexBeforeMove) {
-        var valid = true;
         var CTR = Math.floor(gameLogic.SHAPEWIDTH / 2);
         var row = frow - frameX + CTR;
         var col = fcol - frameY + CTR;
         if (!checkValidShapePlacement(row, col, shape)) {
-            valid = false;
-            return { board: [], valid: valid };
+            return { board: [], valid: false, row: -1, col: -1 };
         }
         var boardAction = getBoardAction(row, col, shape);
         //TODO export a function checkLealMove(board, row, col, turnIndexBeforeMove) // add boardAction
         if (!checkLegalMove(board, row, col, boardAction, turnIndexBeforeMove)) {
-            return { board: [], valid: valid };
+            return { board: [], valid: false, row: -1, col: -1 };
         }
-        return { board: boardAction, valid: valid };
+        return { board: boardAction, valid: true, row: row, col: col };
     }
     function getAllCorners(shape) {
         var corners = [];
@@ -788,7 +792,7 @@ var gameLogic;
         var freeShapeIds = [];
         var allshape = getInitShapes();
         for (var i = 0; i < gameLogic.SHAPENUMBER; i++) {
-            if (shapeStatus[turnIndexBeforeMove][i]) {
+            if (shapeStatus[turnIndexBeforeMove][i] === true) {
                 freeShapeIds.push(i);
             }
         }
@@ -801,16 +805,18 @@ var gameLogic;
             }
             var row = parseIJ(anchor)[0];
             var col = parseIJ(anchor)[1];
-            for (var shapeId = 0; shapeId < freeShapeIds.length; shapeId++) {
+            for (var id = 0; id < freeShapeIds.length; id++) {
                 for (var op = 0; op < gameLogic.OPERATIONS; op++) {
-                    var shape = getShapeByTypeAndOperation(shapeId, op);
+                    var shapeId = freeShapeIds[id];
+                    var shape = getShapeByTypeAndOperation(freeShapeIds[shapeId], op);
+                    var realShapeId = shapeId * gameLogic.OPERATIONS + op;
                     var corners = getAllCorners(shape);
                     for (var c = 0; c < corners.length; c++) {
                         var frameX = corners[c][0];
                         var frameY = corners[c][1];
                         var action = mapShapeToPos(row, col, board, shape, frameX, frameY, turnIndexBeforeMove);
                         if (action.valid) {
-                            return { prev: thisAnchor, board: action.board, valid: action.valid };
+                            return { anchorStatus: thisAnchor, board: angular.copy(action.board), valid: action.valid, shapeId: realShapeId, row: action.row, col: action.col };
                         }
                     }
                 }
@@ -818,7 +824,7 @@ var gameLogic;
             thisAnchor[turnIndexBeforeMove][row * gameLogic.COLS + col] = false;
             // TODO add it to invalid anchor, and purning these anchors for latter search
         }
-        return { prev: thisAnchor, board: retBoard, valid: hasMove };
+        return { anchorStatus: thisAnchor, board: retBoard, valid: false, shapeId: -1, row: -1, col: -1 };
     }
     gameLogic.getNextPossibleShape = getNextPossibleShape;
     /**
@@ -828,6 +834,7 @@ var gameLogic;
      * shapdId is a mix of different shape and the rotation of the shape, starts from 1, 0 is a initial
      */
     function createMove(stateBeforeMove, row, col, shapeId, turnIndexBeforeMove) {
+        console.log("player ", turnIndexBeforeMove, "'s turn");
         if (shapeId < 0) {
             throw new Error("Wrong shapeid");
         }
@@ -859,13 +866,22 @@ var gameLogic;
         }
         //~
         var boardAfterMove = angular.copy(board);
-        console.log("boardAfterMove:");
-        console.log(aux_printFrame(boardAfterMove, gameLogic.COLS));
         shapePlacement(boardAfterMove, boardAction, turnIndexBeforeMove);
         var shapeStatusAfterMove = updateShapeStatus(shapeStatus, shapeId, turnIndexBeforeMove);
+        console.log("boardAfterMove:");
+        console.log(aux_printFrame(boardAfterMove, gameLogic.COLS));
+        console.log(aux_printArray(shapeStatusAfterMove));
         //TODO implement the last check
         var nextstep = getNextPossibleShape(stateBeforeMove.anchorStatus, boardAfterMove, shapeStatusAfterMove, turnIndexBeforeMove);
-        var anchorStatusAfterMove = nextstep.prev;
+        var anchorStatusAfterMove = nextstep.anchorStatus;
+        console.log(boardAfterMove);
+        console.log("possibleMove");
+        console.log(nextstep.valid);
+        console.log("board");
+        console.log(nextstep.board);
+        console.log("anchor status");
+        console.log(anchorStatusAfterMove);
+        console.log(aux_printFrame(nextstep.board, gameLogic.ROWS));
         var playerStatusAfterMove = updatePlayerStatus(playerStatus, turnIndexBeforeMove, nextstep);
         var winner = getWinner(boardAfterMove, playerStatusAfterMove);
         var endMatchScores;
@@ -881,8 +897,14 @@ var gameLogic;
         else {
             // Game continues. Now it's the opponent's turn (the turn switches from 0 to 1 and 1 to 0).
             // TODO change to four player
-            turnIndex = 1 - turnIndexBeforeMove;
-            endMatchScores = null;
+            turnIndex = getNextTurn(turnIndexBeforeMove, playerStatus);
+            //turnIndex = (turnIndexBeforeMove + 1) % GROUPNUMBER;
+            if (turnIndex == -1) {
+                endMatchScores = getScore(boardAfterMove);
+            }
+            else {
+                endMatchScores = null;
+            }
         }
         //~
         // Here delta should be all the blocks covered by the new move
@@ -905,6 +927,16 @@ var gameLogic;
         };
     }
     gameLogic.createInitialMove = createInitialMove;
+    function getNextTurn(turnIndexBeforeMove, playerStatus) {
+        var turnIdx = -1;
+        for (var i = 0; i < gameLogic.GROUPNUMBER; i++) {
+            var t = (turnIndexBeforeMove + i + 1) % gameLogic.GROUPNUMBER;
+            if (playerStatus[t] == true) {
+                return t;
+            }
+        }
+        return turnIdx;
+    }
     function transformMarginsToAbosolute(margins) {
         var ret = [];
         var CTR = Math.floor(gameLogic.SHAPEWIDTH / 2);
@@ -1014,7 +1046,7 @@ var gameLogic;
         var col = 0;
         while (idx < oW) {
             var shapeIdx = getNextShapeFrom(originSB, 0);
-            console.log("get ", shapeIdx.start, "-", shapeIdx.end);
+            ////console.log("get ", shapeIdx.start, "-", shapeIdx.end);
             var len = shapeIdx.end - shapeIdx.start + 1;
             if (col + len >= width) {
                 col = 0;
