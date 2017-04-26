@@ -32742,7 +32742,6 @@ var game;
             updateUI: updateUI,
             getStateForOgImage: null,
         });
-        // TODO
         game.shapeBoard = gameLogic.getAllShapeMatrix_hardcode();
     }
     game.init = init;
@@ -32752,9 +32751,9 @@ var game;
                 "en": "Confirm",
                 "zh": "确定"
             },
-            "PASS": {
-                "en": "Pass",
-                "zh": "过"
+            "CANCEL": {
+                "en": "Cancel",
+                "zh": "取消"
             }
         };
     }
