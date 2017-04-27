@@ -26,9 +26,10 @@ module game {
   export const SHAPEROW = 12;
   export const SHAPECOL = 23;
 
-  let showHintColor:boolean = true;
+  export const SHOW_HINT_COLOR = false;
+  let showHintColor: boolean = SHOW_HINT_COLOR;
 
-  export const BACKGROUND_COLOR = "rgb(240, 240, 240)" ;//"#F0F0F0"
+  export const BACKGROUND_COLOR = "rgb(240, 240, 240)";//"#F0F0F0"
   export const PLAYER_1_COLOR = "#f39c12";
   export const PLAYER_2_COLOR = "#2980b9";
   export const HINT_1_COLOR = "#ffcce0";
@@ -74,7 +75,7 @@ module game {
     });
 
     shapeBoard = gameLogic.getAllShapeMatrix_hardcode();
-    showHintColor = true;
+    showHintColor = SHOW_HINT_COLOR;
   }
 
   function getTranslations(): Translations {
@@ -252,8 +253,8 @@ module game {
       for (let j = 0; j < boardAction[i].length; j++) {
         //console.log(getSquareBackGroundColor(i, j));
         if (boardAction[i][j] === '1') {
-          if (showHintColor === true || getSquareBackGroundColor(i, j) === BACKGROUND_COLOR){
-          setSquareBackGroundColor(i, j, color);
+          if (showHintColor === true || getSquareBackGroundColor(i, j) === BACKGROUND_COLOR) {
+            setSquareBackGroundColor(i, j, color);
           }
         }
       }
@@ -395,7 +396,7 @@ module game {
 
     console.log(gameLogic.aux_printFrame(boardAction, dim));
 
-    if (!angular.equals(preview, boardAction)) {
+    //if (!angular.equals(preview, boardAction)) {
       clearDrag('board', true);
       console.log("set board");
 
@@ -406,7 +407,7 @@ module game {
       setboardActionGroundColor(boardAction, getTurnColorForMove());
 
       preview = boardAction;
-    }
+    //}
     canConfirm = true;
   }
 
@@ -495,22 +496,60 @@ module game {
   export function getHint() {
     console.log("state");
     console.log(state);
+    clearDrag('board', true);
     //let nextmove = gameLogic.getNextPossibleShape(state.anchorStatus, state.board, state.shapeStatus, currentUpdateUI.turnIndex);
-    let nextmoves = gameLogic.getNextPossibleMoveList(state.anchorStatus, state.board, state.shapeStatus, currentUpdateUI.turnIndex);
-    console.log("nextmove");
+    let anchorStatus = angular.copy(state.anchorStatus);
+    let nextmoves = gameLogic.getNextPossibleMoveList(anchorStatus, state.board, state.shapeStatus, currentUpdateUI.turnIndex);
+    console.log("HINT nextmove");
     console.log(nextmoves);
     if (nextmoves.valid) {
+      let pick: number = 0;
+      if (shapeIdChosen != undefined && shapeIdChosen > 0) {
+        let readyList: number[] = [];
+        for (let i = 0; i < nextmoves.moves.length; i++) {
+          if (gameLogic.getShapeType(nextmoves.moves[i].shapeId) == gameLogic.getShapeType(shapeIdChosen)) {
+            readyList.push(i);
+          }
+        }
+        let randPos: number = Math.floor(Math.random() * readyList.length);
+        pick = readyList[randPos];
+      } else {
+        pick = Math.floor(Math.random() * nextmoves.moves.length)
+      }
+      moveToConfirm = {
+        row: nextmoves.moves[pick].row,
+        col: nextmoves.moves[pick].col,
+        shapeId: nextmoves.moves[pick].shapeId
+      };
+
+      console.log("random pick");
+      console.log(moveToConfirm);
       //TODO here find suitable or random one
       // TODO auto draw
-      moveToConfirm = { 
-        row: nextmoves.moves[0].col, 
-        col: nextmoves.moves[0].col, 
-        shapeId: nextmoves.moves[0].shapeId 
-      };
-      // TODO draw on board
-      clearBoardAnchor();
-      boardAreaCellClicked(moveToConfirm.row, moveToConfirm.col);
-      clearClickToDrag();
+      try {
+        if (moveToConfirm == null) {
+          return;
+        }
+
+        shapeIdChosen = moveToConfirm.shapeId
+
+        // draw preview
+        /*
+        let boardAction = gameLogic.getBoardActionFromShapeID(moveToConfirm.row, moveToConfirm.col, moveToConfirm.shapeId);
+        if (!angular.equals(preview, boardAction)) {
+          clearDrag('board', false);
+          console.log("set board");
+          setboardActionGroundColor(boardAction, getTurnColorForMove());
+          preview = boardAction;
+        }
+        */
+        updateboardAction(moveToConfirm.row, moveToConfirm.col);
+        printBoardAnchor();
+        dragDoneForBoard(moveToConfirm.row, moveToConfirm.col, 'board');
+      }
+      catch (e) {
+        console.log("EXCEPTION!:", moveToConfirm);
+      }
     }
   }
 

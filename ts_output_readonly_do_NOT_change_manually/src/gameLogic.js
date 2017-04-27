@@ -855,6 +855,7 @@ var gameLogic;
                         var action = mapShapeToPos(row, col, board, shape, frameX, frameY, turnIndexBeforeMove);
                         if (action.valid) {
                             hasMove = true;
+                            console.log();
                             retList.push({ row: action.row, col: action.col, shapeId: realShapeId });
                         }
                     }
@@ -973,8 +974,7 @@ var gameLogic;
         var anchorStatusAfterMove = angular.copy(anchorStatus);
         for (var _i = 0, _a = nextstep.invalidAnchors; _i < _a.length; _i++) {
             var anchorPos = _a[_i];
-            var pox = parseIJ(anchorPos);
-            anchorStatus[pox[0]][pox[1]] = false;
+            anchorStatus[turnIndexBeforeMove][anchorPos] = false;
         }
         console.log(boardAfterMove);
         console.log("possibleMove");

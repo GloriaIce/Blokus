@@ -961,6 +961,7 @@ module gameLogic {
             let action = mapShapeToPos(row, col, board, shape, frameX, frameY, turnIndexBeforeMove);
             if (action.valid) {
               hasMove = true;
+              console.log()
               retList.push({ row: action.row, col: action.col, shapeId: realShapeId });
             }
           }
@@ -1101,8 +1102,7 @@ module gameLogic {
     let nextstep = getNextPossibleShape(anchorStatus, boardAfterMove, shapeStatusAfterMove, turnIndexBeforeMove);
     let anchorStatusAfterMove = angular.copy(anchorStatus);
     for (let anchorPos of nextstep.invalidAnchors) {
-      let pox:number[] = parseIJ(anchorPos);
-      anchorStatus[pox[0]][pox[1]] = false;
+      anchorStatus[turnIndexBeforeMove][anchorPos] = false;
     }
 
     console.log(boardAfterMove);

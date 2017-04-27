@@ -20,7 +20,8 @@ var game;
     game.dim = 14; //20
     game.SHAPEROW = 12;
     game.SHAPECOL = 23;
-    var showHintColor = true;
+    game.SHOW_HINT_COLOR = false;
+    var showHintColor = game.SHOW_HINT_COLOR;
     game.BACKGROUND_COLOR = "rgb(240, 240, 240)"; //"#F0F0F0"
     game.PLAYER_1_COLOR = "#f39c12";
     game.PLAYER_2_COLOR = "#2980b9";
@@ -58,7 +59,7 @@ var game;
             getStateForOgImage: null,
         });
         game.shapeBoard = gameLogic.getAllShapeMatrix_hardcode();
-        showHintColor = true;
+        showHintColor = game.SHOW_HINT_COLOR;
     }
     game.init = init;
     function getTranslations() {
@@ -335,16 +336,16 @@ var game;
     function updateboardAction(row, col) {
         var boardAction = gameLogic.getBoardActionFromShapeID(row, col, game.shapeIdChosen);
         console.log(gameLogic.aux_printFrame(boardAction, game.dim));
-        if (!angular.equals(game.preview, boardAction)) {
-            clearDrag('board', true);
-            console.log("set board");
-            console.log(gameLogic.aux_printFrame(game.preview, game.dim));
-            console.log(gameLogic.aux_printFrame(boardAction, game.dim));
-            //clearPreview
-            //setboardActionGroundColor(boardAction, getTurnColor());
-            setboardActionGroundColor(boardAction, getTurnColorForMove());
-            game.preview = boardAction;
-        }
+        //if (!angular.equals(preview, boardAction)) {
+        clearDrag('board', true);
+        console.log("set board");
+        console.log(gameLogic.aux_printFrame(game.preview, game.dim));
+        console.log(gameLogic.aux_printFrame(boardAction, game.dim));
+        //clearPreview
+        //setboardActionGroundColor(boardAction, getTurnColor());
+        setboardActionGroundColor(boardAction, getTurnColorForMove());
+        game.preview = boardAction;
+        //}
         game.canConfirm = true;
     }
     function boardAreaChooseMove(row, col) {
@@ -430,15 +431,58 @@ var game;
     function getHint() {
         console.log("state");
         console.log(game.state);
-        var nextmove = gameLogic.getNextPossibleShape(game.state.anchorStatus, game.state.board, game.state.shapeStatus, game.currentUpdateUI.turnIndex);
-        console.log("nextmove");
-        console.log(nextmove);
-        if (nextmove.valid) {
-            game.moveToConfirm = { row: nextmove.row, col: nextmove.col, shapeId: nextmove.shapeId };
-            // TODO draw on board
-            clearBoardAnchor();
-            boardAreaCellClicked(game.moveToConfirm.row, game.moveToConfirm.col);
-            clearClickToDrag();
+        clearDrag('board', true);
+        //let nextmove = gameLogic.getNextPossibleShape(state.anchorStatus, state.board, state.shapeStatus, currentUpdateUI.turnIndex);
+        var anchorStatus = angular.copy(game.state.anchorStatus);
+        var nextmoves = gameLogic.getNextPossibleMoveList(anchorStatus, game.state.board, game.state.shapeStatus, game.currentUpdateUI.turnIndex);
+        console.log("HINT nextmove");
+        console.log(nextmoves);
+        if (nextmoves.valid) {
+            var pick = 0;
+            if (game.shapeIdChosen != undefined && game.shapeIdChosen > 0) {
+                var readyList = [];
+                for (var i = 0; i < nextmoves.moves.length; i++) {
+                    if (gameLogic.getShapeType(nextmoves.moves[i].shapeId) == gameLogic.getShapeType(game.shapeIdChosen)) {
+                        readyList.push(i);
+                    }
+                }
+                var randPos = Math.floor(Math.random() * readyList.length);
+                pick = readyList[randPos];
+            }
+            else {
+                pick = Math.floor(Math.random() * nextmoves.moves.length);
+            }
+            game.moveToConfirm = {
+                row: nextmoves.moves[pick].row,
+                col: nextmoves.moves[pick].col,
+                shapeId: nextmoves.moves[pick].shapeId
+            };
+            console.log("random pick");
+            console.log(game.moveToConfirm);
+            //TODO here find suitable or random one
+            // TODO auto draw
+            try {
+                if (game.moveToConfirm == null) {
+                    return;
+                }
+                game.shapeIdChosen = game.moveToConfirm.shapeId;
+                // draw preview
+                /*
+                let boardAction = gameLogic.getBoardActionFromShapeID(moveToConfirm.row, moveToConfirm.col, moveToConfirm.shapeId);
+                if (!angular.equals(preview, boardAction)) {
+                  clearDrag('board', false);
+                  console.log("set board");
+                  setboardActionGroundColor(boardAction, getTurnColorForMove());
+                  preview = boardAction;
+                }
+                */
+                updateboardAction(game.moveToConfirm.row, game.moveToConfirm.col);
+                printBoardAnchor();
+                dragDoneForBoard(game.moveToConfirm.row, game.moveToConfirm.col, 'board');
+            }
+            catch (e) {
+                console.log("EXCEPTION!:", game.moveToConfirm);
+            }
         }
     }
     game.getHint = getHint;
