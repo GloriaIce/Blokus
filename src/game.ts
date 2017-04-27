@@ -128,7 +128,9 @@ module game {
   }
 
   function getHintColor() {
-    return "#93FF33";
+    var color = ['#ffcce0', '#ccebff', '#00e600', '#ffc34d'];
+    return color[currentUpdateUI.turnIndex];
+    //return "#93FF33";
   }
 
   function printBoardAnchor() {
@@ -185,6 +187,9 @@ module game {
 
     console.log("[handleDragEventGameArea], dragtype:", dragType);
     if (dragType === 'board') {
+      //
+      printBoardAnchor();
+      //~
       console.log("[handleDragEventGameArea], in board get shapeIdChosen:", shapeIdChosen);
       if (shapeIdChosen === undefined || shapeIdChosen == -1) {
         return;
@@ -202,14 +207,13 @@ module game {
         console.log("set board");
 
         setboardActionGroundColor(boardAction, getTurnColorForMove());
-        
         //setboardActionGroundColor(boardAction, getTurnColor());
         preview = boardAction;
       }
       canConfirm = true;
     }
 
-    if (type === "touchend" || type === "touchcancel" || type === "touchleave" || type === "mouseup") {
+    if (type === "touchend"  || type === "touchcancel" || type === "touchleave" || type === "mouseup") {
       // drag ended
       dragDoneForBoard(row, col, dragType);
       clearDrag(dragType, false);
@@ -525,6 +529,9 @@ module game {
     // TODO change shapeId
     getShapeIdAfter(left, right, flip);
     updateboardAction(row, col);
+    //
+    printBoardAnchor();
+    //~
     dragDoneForBoard(row, col, 'board');
   }
 

@@ -108,7 +108,9 @@ var game;
         return { x: x, y: y, dragType: dragType };
     }
     function getHintColor() {
-        return "#93FF33";
+        var color = ['#ffcce0', '#ccebff', '#00e600', '#ffc34d'];
+        return color[game.currentUpdateUI.turnIndex];
+        //return "#93FF33";
     }
     function printBoardAnchor() {
         game.anchorBoard = gameLogic.getBoardAnchor(game.state.board, game.state.anchorStatus, game.currentUpdateUI.turnIndex);
@@ -155,6 +157,9 @@ var game;
         horizontalDraggingLine.setAttribute("y2", "" + centerXY.y);
         console.log("[handleDragEventGameArea], dragtype:", dragType);
         if (dragType === 'board') {
+            //
+            printBoardAnchor();
+            //~
             console.log("[handleDragEventGameArea], in board get shapeIdChosen:", game.shapeIdChosen);
             if (game.shapeIdChosen === undefined || game.shapeIdChosen == -1) {
                 return;
@@ -452,6 +457,9 @@ var game;
         // TODO change shapeId
         getShapeIdAfter(left, right, flip);
         updateboardAction(row, col);
+        //
+        printBoardAnchor();
+        //~
         dragDoneForBoard(row, col, 'board');
     }
     game.RotateAndFlip = RotateAndFlip;
@@ -723,6 +731,10 @@ var game;
     function getTurnColorForMove() {
         var color = ['#f1c40f', '#3498db', '#00e600', '#ffc34d'];
         return color[game.currentUpdateUI.turnIndex];
+    }
+    function getPosIndex() {
+        var index = ['e2e_test_board_div_0x0', 'e2e_test_board_div_13x13']
+        return index[game.currentUpdateUI.turnIndex];
     }
     function setShapeAreaSquareStyle(row, col) {
         var shapeId = game.shapeBoard.cellToShape[row][col];
