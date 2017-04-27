@@ -33,6 +33,7 @@ module aiService {
     */
     
     try {
+
       let nextmoves = gameLogic.getNextPossibleMoveList(state.anchorStatus, state.board, state.shapeStatus, turnIndexBeforeMove);
       if (nextmoves.valid) {
         let anchors = state.anchorStatus;
