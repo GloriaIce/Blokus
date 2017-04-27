@@ -1006,6 +1006,7 @@ module gameLogic {
       let row: number = parseIJ(anchor)[0];
       let col: number = parseIJ(anchor)[1];
 
+      // TODO shuffle and make random
       for (let id = 0; id < freeShapeIds.length; id++) {
         let shapeId: number = freeShapeIds[id];
         let stdShape: Shape = allshape[shapeId];
@@ -1021,6 +1022,8 @@ module gameLogic {
             let frameY: number = corners[c][1];
             let action = mapShapeToPos(row, col, board, shape, frameX, frameY, turnIndexBeforeMove);
             if (action.valid) {
+              //console.log("action");//~
+              //console.log(action);//~
               return { invalidAnchors: invalidAnchors, board: angular.copy(action.board), valid: action.valid, shapeId: realShapeId, row: action.row, col: action.col };
             }
           }
