@@ -71652,7 +71652,7 @@ var aiService;
     function findComputerMove(move) {
         return createComputerMove(move, 
         // at most 1 second for the AI to choose a move (but might be much quicker)
-        { millisecondsLimit: 10000, maxDepth: 30000 });
+        { millisecondsLimit: 1000, maxDepth: 30000 });
     }
     aiService.findComputerMove = findComputerMove;
     /**
