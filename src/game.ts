@@ -58,7 +58,7 @@ module game {
   export let endMatchScore: number[] = [];
   export let playerStatus: boolean[] = [];
   export let GlobalErrorMsg: string = "";
-  export let shapeMarkBoard: number[][] = [];
+  //export let shapeMarkBoard: number[][] = [];
 
   export function init($rootScope_: angular.IScope, $timeout_: angular.ITimeoutService) {
     $rootScope = $rootScope_;
@@ -87,7 +87,7 @@ module game {
     showHintColor = SHOW_HINT_COLOR;
     GlobalErrorMsg = "";
     moveInBoard = true;
-    shapeMarkBoard = gameLogic.getShapeMarkMatrix();
+    //shapeMarkBoard = gameLogic.getShapeMarkMatrix();
     for (let p = 0; p < gameLogic.GROUPNUMBER; p++) {
       endMatchScore[p] = 0;
       playerStatus[p] = true;
@@ -1063,6 +1063,7 @@ module game {
     return color[currentUpdateUI.turnIndex];
   }
 
+/*
   function getBoarderStyle(row:number, col:number, opId: number) {
     let val:number = shapeMarkBoard[row][col];
     if (((shapeMarkBoard[row][col] >> opId) & 1) == 1) {
@@ -1070,7 +1071,8 @@ module game {
     }
     return '1pt solid white'
   }
-
+*/
+        
   export function setShapeAreaSquareStyle(row: number, col: number) {
     let shapeId: number = shapeBoard.cellToShape[row][col]
     //console.log("currentUpdateUI.turnIndex:" + currentUpdateUI.turnIndex + ":(" + row + "," + col + "):" + shapeId);
@@ -1079,6 +1081,7 @@ module game {
       if (shapeIdChosen !== undefined && shapeIdChosen >= 0 && shapeId === gameLogic.getShapeType(shapeIdChosen)) {
         // TODO change to a brighter color
         color = getTurnColorForMove(); //getTurnColorForMove();
+        /*
         return {
               'border-top-style': getBoarderStyle(row, col, 0),
               'border-left-style': getBoarderStyle(row, col, 1),
@@ -1086,6 +1089,7 @@ module game {
               'border-right-style': getBoarderStyle(row, col, 3),
               'background' : color,
         }
+        */
       } else if (currentUpdateUI.turnIndex >= 0 && state.shapeStatus[currentUpdateUI.turnIndex][shapeId]) {
         color = getTurnColor();
       }
