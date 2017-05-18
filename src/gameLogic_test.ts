@@ -1,5 +1,5 @@
 /*
-describe("In TicTacToe", function() {
+describe("blokus", function() {
   let X_TURN = 0;
   let O_TURN = 1;
   let NO_ONE_TURN = -1;
@@ -138,4 +138,5 @@ describe("In TicTacToe", function() {
        ['', '', '']], 0, 3);
   });
 });
+
 */
