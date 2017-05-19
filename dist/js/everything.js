@@ -70685,7 +70685,7 @@ var game;
     game.endMatchScore = [];
     game.playerStatus = [];
     game.GlobalErrorMsg = "";
-    game.shapeMarkBoard = [];
+    //export let shapeMarkBoard: number[][] = [];
     function init($rootScope_, $timeout_) {
         game.$rootScope = $rootScope_;
         game.$timeout = $timeout_;
@@ -70710,7 +70710,7 @@ var game;
         showHintColor = game.SHOW_HINT_COLOR;
         game.GlobalErrorMsg = "";
         game.moveInBoard = true;
-        game.shapeMarkBoard = gameLogic.getShapeMarkMatrix();
+        //shapeMarkBoard = gameLogic.getShapeMarkMatrix();
         for (var p = 0; p < gameLogic.GROUPNUMBER; p++) {
             game.endMatchScore[p] = 0;
             game.playerStatus[p] = true;
@@ -71574,6 +71574,9 @@ var game;
     }
     game.cellClicked = cellClicked;
     function getBoardSquareColor(row, col) {
+        if (game.state === undefined || game.state.board === undefined) {
+            return game.BACKGROUND_COLOR;
+        }
         if (game.state.board[row][col] === '0') {
             return game.PLAYER_1_COLOR;
         }
@@ -71603,13 +71606,15 @@ var game;
         var color = [game.PLAYER_1_MOVE_COLOR, game.PLAYER_2_MOVE_COLOR, '#00e600', '#ffc34d'];
         return color[game.currentUpdateUI.turnIndex];
     }
-    function getBoarderStyle(row, col, opId) {
-        var val = game.shapeMarkBoard[row][col];
-        if (((game.shapeMarkBoard[row][col] >> opId) & 1) == 1) {
-            return '1pt solid yellow';
+    /*
+      function getBoarderStyle(row:number, col:number, opId: number) {
+        let val:number = shapeMarkBoard[row][col];
+        if (((shapeMarkBoard[row][col] >> opId) & 1) == 1) {
+          return '1pt solid yellow'
         }
-        return '1pt solid white';
-    }
+        return '1pt solid white'
+      }
+    */
     function setShapeAreaSquareStyle(row, col) {
         var shapeId = game.shapeBoard.cellToShape[row][col];
         //console.log("currentUpdateUI.turnIndex:" + currentUpdateUI.turnIndex + ":(" + row + "," + col + "):" + shapeId);
@@ -71618,13 +71623,15 @@ var game;
             if (game.shapeIdChosen !== undefined && game.shapeIdChosen >= 0 && shapeId === gameLogic.getShapeType(game.shapeIdChosen)) {
                 // TODO change to a brighter color
                 color = getTurnColorForMove(); //getTurnColorForMove();
+                /*
                 return {
-                    'border-top-style': getBoarderStyle(row, col, 0),
-                    'border-left-style': getBoarderStyle(row, col, 1),
-                    'border-bottom-style': getBoarderStyle(row, col, 2),
-                    'border-right-style': getBoarderStyle(row, col, 3),
-                    'background': color,
-                };
+                      'border-top-style': getBoarderStyle(row, col, 0),
+                      'border-left-style': getBoarderStyle(row, col, 1),
+                      'border-bottom-style': getBoarderStyle(row, col, 2),
+                      'border-right-style': getBoarderStyle(row, col, 3),
+                      'background' : color,
+                }
+                */
             }
             else if (game.currentUpdateUI.turnIndex >= 0 && game.state.shapeStatus[game.currentUpdateUI.turnIndex][shapeId]) {
                 color = getTurnColor();
