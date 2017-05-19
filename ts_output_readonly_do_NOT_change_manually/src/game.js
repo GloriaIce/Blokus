@@ -935,6 +935,9 @@ var game;
     }
     game.cellClicked = cellClicked;
     function getBoardSquareColor(row, col) {
+        if (game.state === undefined || game.state.board === undefined) {
+            return game.BACKGROUND_COLOR;
+        }
         if (game.state.board[row][col] === '0') {
             return game.PLAYER_1_COLOR;
         }

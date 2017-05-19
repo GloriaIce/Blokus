@@ -1035,6 +1035,9 @@ module game {
   }
 
   function getBoardSquareColor(row: number, col: number) {
+    if (state === undefined || state.board === undefined) {
+      return BACKGROUND_COLOR;
+    }
     if (state.board[row][col] === '0') {
       return PLAYER_1_COLOR;
     } else if (state.board[row][col] === '1') {
